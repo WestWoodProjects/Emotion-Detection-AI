@@ -82,16 +82,21 @@ button:hover {
 
   <div id="webcam-container"></div>
   <div id="label-container"></div>
-  <div id="message">Click Start to begin...</div>
+  <div id="message">
+  <div id="line1">Click Start...</div>
+  <div id="line2"></div>
+  <div id="line3"></div>
+</div>
 </div>
   
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.5/dist/teachablemachine-image.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest"></script>
   <script>
   console.log("tmImage:", typeof tmImage);
 </script>
 
 <script>
+  let lastEmotion = "";
 const URL = "https://teachablemachine.withgoogle.com/models/XmRqniaMs/";
 
 let model, webcam, labelContainer;
@@ -166,14 +171,23 @@ function getMessage(emotion) {
 async function predict() {
   const prediction = await model.predict(webcam.canvas);
 
-  let highest = prediction.reduce((a, b) => 
+  let highest = prediction.reduce((a, b) =>
     a.probability > b.probability ? a : b
   );
 
-  labelContainer.innerHTML = "Detected: " + highest.className;
+  const emotion = highest.className;
 
-  document.getElementById("message").innerText =
-    getMessage(highest.className);
+  labelContainer.innerHTML = "Detected: " + emotion;
+
+  // ONLY update when emotion changes
+  if (emotion !== lastEmotion) {
+    lastEmotion = emotion;
+   const msg = getMessage(emotion);
+
+document.getElementById("line1").innerText = "Emotion: " + emotion;
+document.getElementById("line2").innerText = msg;
+document.getElementById("line3").innerText = "AI is analyzing...";
+  }
 }
 </script>
 
