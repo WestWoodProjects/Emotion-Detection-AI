@@ -85,8 +85,11 @@ button:hover {
   <div id="message">Click Start to begin...</div>
 </div>
   
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
-<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.5/dist/teachablemachine-image.min.js"></script>
+  <script>
+  console.log("tmImage:", typeof tmImage);
+</script>
 
 <script>
 const URL = "https://teachablemachine.withgoogle.com/models/XmRqniaMs/";
