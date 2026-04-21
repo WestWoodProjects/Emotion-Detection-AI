@@ -4,9 +4,6 @@
 <meta charset="UTF-8">
 <title>Emotion AI Detector</title>
 
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
-<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest"></script>
-
 <style>
 body {
   margin: 0;
@@ -87,6 +84,9 @@ button:hover {
   <div id="label-container"></div>
   <div id="message">Click Start to begin...</div>
 </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest"></script>
 
 <script>
 const URL = "https://teachablemachine.withgoogle.com/models/XmRqniaMs/";
@@ -105,7 +105,7 @@ async function init() {
 
     webcam = new tmImage.Webcam(300, 300, true);
 
-    await webcam.setup(); // may throw error
+    await webcam.setup({ facingMode: "user" }); // ✅ FIXED
     await webcam.play();
 
     window.requestAnimationFrame(loop);
@@ -118,9 +118,11 @@ async function init() {
     loadingText.innerText = "✅ Camera Started";
 
   } catch (error) {
-    console.error(error);
-    loadingText.innerText = "❌ Camera Error: अनुमति दें (Allow camera)";
-    alert("Camera access failed! Check permissions or HTTPS.");
+    console.error("REAL ERROR:", error);
+
+    // Show actual error instead of generic one
+    loadingText.innerText = "❌ Error: " + error.message;
+    alert("Error: " + error.message);
   }
 }
 
