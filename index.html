@@ -2,9 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Emotion AI Detector</title>
-
-<style>
+<title>Emotion AI</title>
+  <style>
 body {
   margin: 0;
   font-family: 'Poppins', sans-serif;
@@ -70,43 +69,47 @@ button:hover {
   color: #ffd369;
   margin-top: 10px;
 }
+    #line1, #line2, #line3 {
+  transition: all 0.3s ease;
+}
 </style>
 </head>
 
 <body>
 
-<h1>🎭 Emotion Detection AI</h1>
+<h1>Emotion AI Detector</h1>
 
-<div class="container">
-  <button onclick="init()">Start Detection</button>
-  <div class="loading" id="loading"></div>
+<button onclick="window.init()">Start</button>
 
-  <div id="webcam-container"></div>
-  <div id="label-container"></div>
-  <div id="message">
-  <div id="line1">Click Start...</div>
-  <div id="line2"></div>
-  <div id="line3"></div>
+<div id="webcam-container"></div>
+
+<div>
+  <p id="line1">Emotion: -</p>
+  <p id="line2">Message: -</p>
+  <p id="line3">Status: -</p>
 </div>
-</div>
-  
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
-<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest"></script>
-  <script>
-  console.log("tmImage:", typeof tmImage);
-</script>
+
+<!-- ✅ STABLE LIBRARIES (IMPORTANT FIX) -->
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.5/dist/teachablemachine-image.min.js"></script>
 
 <script>
-  let lastEmotion = "";
+console.log("tmImage:", typeof tmImage);
+
 const URL = "https://teachablemachine.withgoogle.com/models/XmRqniaMs/";
 
-let model, webcam;
+let model;
+let webcam;
+let lastEmotion = "";
+let lastSpoken = "";
 
-async function init() {
-  const loadingText = document.getElementById("loading");
-  loadingText.innerText = "Loading model...";
-
+/* ---------------- INIT ---------------- */
+window.init = async function () {
   try {
+    document.getElementById("line3").innerText = "Loading model...";
+
+    if (!tmImage) throw new Error("tmImage failed to load");
+
     const modelURL = URL + "model.json";
     const metadataURL = URL + "metadata.json";
 
@@ -119,54 +122,43 @@ async function init() {
     document.getElementById("webcam-container").innerHTML = "";
     document.getElementById("webcam-container").appendChild(webcam.canvas);
 
-    setTimeout(() => {
-      window.requestAnimationFrame(loop);
-    }, 500);
+    document.getElementById("line3").innerText = "Camera started";
 
-    loadingText.innerText = "✅ Camera Started";
+    window.requestAnimationFrame(loop);
 
-  } catch (error) {
-    console.error(error);
-    loadingText.innerText = "❌ " + error.message;
+  } catch (err) {
+    console.error(err);
+    document.getElementById("line3").innerText = "Error: " + err.message;
   }
-}
+};
 
+/* ---------------- LOOP ---------------- */
 async function loop() {
-  if (!webcam || !model) return;
-    webcam.update();
-    await predict();
+  if (!webcam || !model) {
+    window.requestAnimationFrame(loop);
+    return;
   }
+
+  webcam.update();
+  await predict();
+
   window.requestAnimationFrame(loop);
 }
 
+/* ---------------- MESSAGE SYSTEM ---------------- */
 function getMessage(emotion) {
-  const jokes = [
-    "Why don’t skeletons fight? 😂",
-    "Computer needed a break 😭",
-    "Math book: too many problems 🤣"
-  ];
+  const map = {
+    Sad: "Cheer up 😊",
+    Happy: "Keep smiling 😎",
+    Angry: "Take a deep breath 😤",
+    Stressed: "Relax for a moment 🧘",
+    "No Human": "No face detected 👀"
+  };
 
-  const stressTips = [
-    "Take a deep breath 😌",
-    "Stretch 🧘",
-    "Reset your mind 🔄"
-  ];
-
-  const angerTips = [
-    "Punch pillow 😤",
-    "Walk 🚶",
-    "Count slowly 😶"
-  ];
-
-  if (emotion === "Sad") return "😂 " + jokes[Math.floor(Math.random()*jokes.length)];
-  if (emotion === "Stressed") return "🧠 " + stressTips[Math.floor(Math.random()*stressTips.length)];
-  if (emotion === "Angry") return "💥 " + angerTips[Math.floor(Math.random()*angerTips.length)];
-  if (emotion === "Happy") return "😎 You're glowing!";
-  if (emotion === "No Human") return "👀 Come back human!";
-
-  return "🙂";
+  return map[emotion] || "Neutral state 🙂";
 }
 
+/* ---------------- PREDICT ---------------- */
 async function predict() {
   const prediction = await model.predict(webcam.canvas);
 
@@ -180,29 +172,26 @@ async function predict() {
     lastEmotion = emotion;
 
     const msg = getMessage(emotion);
-    const box = document.getElementById("message");
-
-    // UI animation
-    box.style.transform = "scale(1.05)";
-    setTimeout(() => box.style.transform = "scale(1)", 200);
 
     document.getElementById("line1").innerText = "Emotion: " + emotion;
     document.getElementById("line2").innerText = msg;
-    document.getElementById("line3").innerText = "AI is analyzing...";
+    document.getElementById("line3").innerText =
+      "Confidence: " + Math.round(highest.probability * 100) + "%";
 
-    // Voice (SAFE version)
+    /* SAFE VOICE (NO SPAM) */
     if (msg !== lastSpoken) {
       lastSpoken = msg;
+
       speechSynthesis.cancel();
 
-      let speech = new SpeechSynthesisUtterance(msg);
+      const speech = new SpeechSynthesisUtterance(msg);
       speech.rate = 1;
       speech.pitch = 1;
 
       speechSynthesis.speak(speech);
     }
 
-    console.log("Detected emotion:", emotion);
+    console.log("Emotion:", emotion);
   }
 }
 </script>
