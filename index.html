@@ -181,17 +181,31 @@ async function predict() {
       "Confidence: " + Math.round(highest.probability * 100) + "%";
 
     /* SAFE VOICE (NO SPAM) */
-    if (msg !== lastSpoken) {
-      lastSpoken = msg;
+   if (msg !== lastSpoken) {
+  lastSpoken = msg;
 
-      speechSynthesis.cancel();
+  speechSynthesis.cancel();
 
-      const speech = new SpeechSynthesisUtterance(msg);
-      speech.rate = 1;
-      speech.pitch = 1;
+  const speech = new SpeechSynthesisUtterance(msg);
 
-      speechSynthesis.speak(speech);
-    }
+  // 🌿 Soothing settings
+  speech.rate = 0.85;   // slower = calmer
+  speech.pitch = 1.1;   // gentle tone
+  speech.volume = 1;
+
+  // 🎧 Try better voice if available
+  const voices = speechSynthesis.getVoices();
+  const preferredVoice = voices.find(v =>
+    v.name.includes("Google") ||
+    v.lang.includes("en")
+  );
+
+  if (preferredVoice) {
+    speech.voice = preferredVoice;
+  }
+
+  speechSynthesis.speak(speech);
+}
 
     console.log("Emotion:", emotion);
 
