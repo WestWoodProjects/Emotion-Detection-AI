@@ -80,6 +80,8 @@ button:hover {
 <h1>Emotion AI Detector</h1>
 
 <button onclick="window.init()">Start</button>
+  <button onclick="stopAI()">Stop</button>
+  
 
 <div id="webcam-container"></div>
 
@@ -102,6 +104,7 @@ let model;
 let webcam;
 let lastEmotion = "";
 let lastSpoken = "";
+let running = false;
 
 /* ---------------- INIT ---------------- */
 window.init = async function () {
@@ -123,7 +126,7 @@ window.init = async function () {
     document.getElementById("webcam-container").appendChild(webcam.canvas);
 
     document.getElementById("line3").innerText = "Camera started";
-
+    running = true;
     window.requestAnimationFrame(loop);
 
   } catch (err) {
@@ -134,13 +137,12 @@ window.init = async function () {
 
 /* ---------------- LOOP ---------------- */
 async function loop() {
-  if (!webcam || !model) {
-    window.requestAnimationFrame(loop);
-    return;
-  }
+  if (!running) return;
 
-  webcam.update();
-  await predict();
+  if (webcam && model) {
+    webcam.update();
+    await predict();
+  }
 
   window.requestAnimationFrame(loop);
 }
@@ -192,7 +194,23 @@ async function predict() {
     }
 
     console.log("Emotion:", emotion);
+
   }
+}
+  function stopAI() {
+  running = false;
+
+  if (webcam) {
+    webcam.stop();
+  }
+
+  speechSynthesis.cancel();
+
+  document.getElementById("line1").innerText = "Stopped";
+  document.getElementById("line2").innerText = "";
+  document.getElementById("line3").innerText = "AI stopped";
+
+  document.getElementById("webcam-container").innerHTML = "";
 }
 </script>
 
