@@ -96,12 +96,9 @@ button:hover {
 <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.5/dist/teachablemachine-image.min.js"></script>
 
 <script>
-console.log("tmImage:", typeof tmImage);
-
 const URL = "https://teachablemachine.withgoogle.com/models/XmRqniaMs/";
 
-let model;
-let webcam;
+let model, webcam, maxPredictions;
 let lastEmotion = "";
 let lastSpoken = "";
 let running = false;
@@ -111,12 +108,11 @@ window.init = async function () {
   try {
     document.getElementById("line3").innerText = "Loading model...";
 
-    if (!tmImage) throw new Error("tmImage failed to load");
-
     const modelURL = URL + "model.json";
     const metadataURL = URL + "metadata.json";
 
     model = await tmImage.load(modelURL, metadataURL);
+    maxPredictions = model.getTotalClasses();
 
     webcam = new tmImage.Webcam(300, 300, true);
     await webcam.setup({ facingMode: "user" });
@@ -125,8 +121,9 @@ window.init = async function () {
     document.getElementById("webcam-container").innerHTML = "";
     document.getElementById("webcam-container").appendChild(webcam.canvas);
 
-    document.getElementById("line3").innerText = "Camera started";
     running = true;
+    document.getElementById("line3").innerText = "Camera started";
+
     window.requestAnimationFrame(loop);
 
   } catch (err) {
@@ -150,20 +147,21 @@ async function loop() {
 /* ---------------- MESSAGE SYSTEM ---------------- */
 function getMessage(emotion) {
   const map = {
-    Sad: "Cheer up ",
-    Happy: "Keep smiling ",
-    Angry: "Take a deep breath ",
-    Stressed: "Relax for a moment ",
-    "No Human": "No face detected "
+    Sad: "Cheer up 😊",
+    Happy: "Keep smiling 😎",
+    Angry: "Take a deep breath 😤",
+    Stressed: "Relax for a moment 🧘",
+    "No Human": "No face detected 👀"
   };
 
-  return map[emotion] || "Neutral state ";
+  return map[emotion] || "Neutral state 🙂";
 }
 
 /* ---------------- PREDICT ---------------- */
 async function predict() {
   const prediction = await model.predict(webcam.canvas);
 
+  // 🔥 Find highest probability (IMPORTANT UPGRADE)
   let highest = prediction.reduce((a, b) =>
     a.probability > b.probability ? a : b
   );
@@ -180,43 +178,36 @@ async function predict() {
     document.getElementById("line3").innerText =
       "Confidence: " + Math.round(highest.probability * 100) + "%";
 
-    /* SAFE VOICE (NO SPAM) */
-   if (msg !== lastSpoken) {
-  lastSpoken = msg;
+    /* 🌿 SOOTHING VOICE */
+    if (msg !== lastSpoken) {
+      lastSpoken = msg;
 
-  speechSynthesis.cancel();
+      speechSynthesis.cancel();
 
-  const speech = new SpeechSynthesisUtterance(msg);
+      const speech = new SpeechSynthesisUtterance(msg);
+      speech.rate = 0.85;
+      speech.pitch = 1.1;
+      speech.volume = 1;
 
-  // 🌿 Soothing settings
-  speech.rate = 0.85;   // slower = calmer
-  speech.pitch = 1.1;   // gentle tone
-  speech.volume = 1;
+      const voices = speechSynthesis.getVoices();
+      const preferredVoice = voices.find(v =>
+        v.name.includes("Google") || v.lang.includes("en")
+      );
 
-  // 🎧 Try better voice if available
-  const voices = speechSynthesis.getVoices();
-  const preferredVoice = voices.find(v =>
-    v.name.includes("Google") ||
-    v.lang.includes("en")
-  );
+      if (preferredVoice) speech.voice = preferredVoice;
 
-  if (preferredVoice) {
-    speech.voice = preferredVoice;
-  }
-
-  speechSynthesis.speak(speech);
-}
+      speechSynthesis.speak(speech);
+    }
 
     console.log("Emotion:", emotion);
-
   }
 }
-  function stopAI() {
+
+/* ---------------- STOP ---------------- */
+function stopAI() {
   running = false;
 
-  if (webcam) {
-    webcam.stop();
-  }
+  if (webcam) webcam.stop();
 
   speechSynthesis.cancel();
 
@@ -227,6 +218,5 @@ async function predict() {
   document.getElementById("webcam-container").innerHTML = "";
 }
 </script>
-
 </body>
 </html>
